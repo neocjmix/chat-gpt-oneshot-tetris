@@ -2,10 +2,9 @@
 
 모바일 터치와 데스크톱 키보드로 플레이하는 작은 테트리스 게임입니다. HTML, CSS, JavaScript와 Canvas 2D만 사용하며 런타임 의존성, 번들러, 계정, 백엔드가 없습니다.
 
-**2026-10-01 확인 상태:** 구현 파일 저장 완료. GitHub Actions 문법 검사 및 **38개 테스트 통과**. 정적 배포 artifact 업로드 성공. **Pages 최초 생성이 `Resource not accessible by integration` 오류로 실패하여 라이브 배포는 미완료**입니다. [실행 기록](https://github.com/neocjmix/chat-gpt-oneshot-tetris/actions/runs/36856154118)과 [검증 범위](VERIFICATION.md)를 확인하세요.
+**플레이 주소:** https://neocjmix.github.io/chat-gpt-oneshot-tetris/
 
-**배포 예정 주소:** https://neocjmix.github.io/chat-gpt-oneshot-tetris/  
-이 주소는 GitHub Pages 배포가 성공한 뒤에만 사용할 수 있습니다. 저장소에 코드가 있다는 것과 실제 배포 성공은 별개입니다.
+**2026-10-01 확인 상태:** GitHub Pages 배포 성공. GitHub Actions 문법 검사 및 **38개 테스트 통과**. 배포 후 HTML 응답과 `engine.js`·`app.js`의 저장소 원본 대비 바이트 일치 검사도 통과했습니다. 실제 브라우저 플레이와 모바일 레이아웃은 아직 직접 검증하지 않았습니다. [성공한 실행 기록](https://github.com/neocjmix/chat-gpt-oneshot-tetris/actions/runs/36858479066)과 [검증 범위 및 실패·복구 이력](VERIFICATION.md)을 확인하세요.
 
 ## 플레이
 
@@ -44,13 +43,15 @@
 
 ## GitHub Pages 배포
 
-`main`의 `site/`, `tests/`, workflow 변경을 push하거나 Actions에서 수동 실행하면 JavaScript 문법 검사와 엔진 테스트를 수행합니다. 이후 `site/`만 Pages artifact로 업로드하고 공식 `configure-pages` / `deploy-pages` 액션으로 게시합니다. 모든 리소스 경로는 상대 경로이므로 repository 하위 경로에서도 동작하도록 구성합니다. 서비스 워커와 외부 CDN은 사용하지 않습니다. 문서만 변경하면 배포 workflow를 다시 실행하지 않습니다.
+`main`의 `site/`, `tests/`, workflow 변경을 push하거나 Actions에서 수동 실행하면 JavaScript 문법 검사와 엔진 테스트를 수행합니다. 이후 `site/`만 Pages artifact로 업로드하고 공식 `configure-pages` / `deploy-pages` 액션으로 게시합니다. 배포 후 라이브 HTML과 JavaScript 응답을 검사합니다. 모든 리소스 경로는 상대 경로이므로 repository 하위 경로에서도 동작하도록 구성합니다. 서비스 워커와 외부 CDN은 사용하지 않습니다. 문서만 변경하면 배포 workflow를 다시 실행하지 않습니다.
 
-### 최초 활성화 실패 복구
+### 최초 활성화와 재실행
 
-이번 실행에서는 `pages: write`가 부여된 기본 `GITHUB_TOKEN`으로 최초 Pages 사이트 생성이 거부되었습니다. 저장소 **Settings → Pages → Build and deployment → Source → GitHub Actions**를 선택한 뒤, **Actions → Check and deploy Pages → Run workflow → main**으로 새 실행을 시작하세요. 사이트 활성화와 후속 배포 성공이 모두 필요합니다. 기존 실행의 artifact와 충돌하지 않도록 새 workflow 실행을 기준으로 안내합니다.
+새 저장소에서 기본 `GITHUB_TOKEN`의 최초 Pages 생성이 거부되면 저장소 **Settings → Pages → Build and deployment → Source → GitHub Actions**를 선택해야 합니다. 이 저장소는 사용자가 해당 설정을 완료했고, 이후 배포까지 성공했습니다.
 
-최초 활성화 실패를 배포 완료로 기록하지 않습니다. 별도의 토큰을 코드에 저장하거나 권한 제한을 우회하지 않았습니다.
+기존 실패 run의 재실행에서 동일한 `github-pages` artifact가 두 개 생겨 배포가 실패했던 문제도 수정했습니다. 현재 workflow는 업로드와 배포에 동일한 `github-pages-${{ github.run_id }}-${{ github.run_attempt }}` 이름을 사용하도록 구성하여 실행·재시도별 artifact를 구분합니다. 수정된 workflow의 첫 배포는 성공했으며, 수정 후 재시도 자체를 별도로 검증한 것은 아닙니다.
+
+수동 배포는 **Actions → Check and deploy Pages → Run workflow → main**으로 시작합니다. 과거 실패 run을 재실행하면 그 당시 commit의 workflow가 사용되므로, 수정된 설정으로 실행하려면 새 run을 시작하세요. 별도의 토큰을 코드에 저장하거나 권한 제한을 우회하지 않았습니다.
 
 참조: [GitHub Pages custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [configure-pages](https://github.com/actions/configure-pages).
 
