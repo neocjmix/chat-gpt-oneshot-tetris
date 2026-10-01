@@ -1,0 +1,101 @@
+name: Check and deploy Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'tests/**'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    paths:
+      - 'site/**'
+      - 'tests/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Rules and static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          node --check site/engine.js
+          node --check site/app.js
+      - name: Engine and asset tests
+        run: node --test tests/engine.test.cjs
+      - name: Record verification boundary
+        run: |
+          echo '## Automated verification' >> "$GITHUB_STEP_SUMMARY"
+          echo 'JavaScript syntax, engine rules, and static asset/DOM-ID wiring checked on this GitHub Actions runner.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This job does not launch a browser or verify real touch input, audio, visual layout, or mobile Safari.' >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Publish site
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Configure or initialize Pages
+        uses: actions/configure-pages@v5
+        with:
+          # First-time site creation can require repository-administration
+          # permission that the normal GITHUB_TOKEN intentionally lacks.
+          # A failure here must remain a failed deployment, not a false success.
+          enablement: true
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+      - name: Check published HTTP responses
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          curl --fail --location --retry 5 --retry-delay 5 --retry-all-errors "$SITE_URL" -o /tmp/tetris-live.html
+          grep -F '<title>NIGHT SHIFT' /tmp/tetris-live.html
+          curl --fail --location --retry 3 --retry-delay 5 --retry-all-errors "${SITE_URL}engine.js" -o /tmp/tetris-engine.js
+          curl --fail --location --retry 3 --retry-delay 5 --retry-all-errors "${SITE_URL}app.js" -o /tmp/tetris-app.js
+          cmp site/engine.js /tmp/tetris-engine.js
+          cmp site/app.js /tmp/tetris-app.js
+          echo '## Published site' >> "$GITHUB_STEP_SUMMARY"
+          echo "$SITE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo 'HTTP entry point and deployed JS bytes match the checked-out revision. Browser gameplay is not verified by this check.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Record deployment failure guidance
+        if: failure()
+        run: |
+          echo '## Deployment did not complete' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Read the failing step above; an uploaded artifact alone is not a live site.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'If initial Pages enablement was denied, open Settings > Pages > Build and deployment > Source, select GitHub Actions, then rerun the failed Publish site job.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No personal token is embedded in this repository.' >> "$GITHUB_STEP_SUMMARY"
