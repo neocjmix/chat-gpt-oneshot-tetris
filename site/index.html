@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0c1220">
+  <meta name="description" content="NIGHT SHIFT — 터치와 키보드로 즐기는 작은 테트리스. 설치도 가입도 없이, 한 판.">
+  <title>NIGHT SHIFT · Pocket Tetris</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./engine.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main class="app" id="app" aria-label="NIGHT SHIFT 테트리스">
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <div><p class="eyebrow">POCKET ARCADE / 01</p><h1>NIGHT SHIFT</h1></div>
+      </div>
+      <div class="tools">
+        <button class="tool" id="sound" type="button" aria-label="소리 켜기" aria-pressed="false"><span aria-hidden="true">♪</span><small id="sound-label">OFF</small></button>
+        <button class="tool" id="pause" type="button" aria-label="일시정지 및 메뉴"><span aria-hidden="true">Ⅱ</span><small>MENU</small></button>
+      </div>
+    </header>
+    <section class="stats" aria-label="현재 기록">
+      <div class="stat score-stat"><span>SCORE</span><output id="score">0</output></div>
+      <div class="stat"><span>BEST</span><output id="best">0</output></div>
+      <div class="stat"><span>LEVEL</span><output id="level">01</output><progress id="level-progress" max="10" value="0" aria-label="다음 레벨까지 지운 줄"></progress></div>
+      <div class="stat"><span>LINES</span><output id="lines">0</output></div>
+    </section>
+    <section class="stage" id="stage" aria-label="게임 보드 및 미리보기">
+      <div class="board-shell" id="board-shell">
+        <canvas id="board" width="300" height="600" tabindex="0" role="img" aria-label="10열 20행 게임 보드. 아래 버튼 또는 방향키로 조작합니다.">이 게임은 Canvas를 지원하는 브라우저가 필요합니다.</canvas>
+        <div class="toast" id="toast" aria-hidden="true"></div>
+      </div>
+      <aside class="rail" id="rail" aria-label="조각 미리보기">
+        <section class="preview-card hold-card" id="hold-card"><h2>HOLD <span>C</span></h2><canvas id="hold" width="96" height="64" role="img" aria-label="보관된 조각 없음"></canvas></section>
+        <section class="preview-card next-card"><h2>NEXT <span>3</span></h2><canvas id="next" width="96" height="216" role="img" aria-label="다음 조각"></canvas></section>
+      </aside>
+    </section>
+    <section class="controls" id="controls" aria-label="터치 게임 조작">
+      <button type="button" class="key" data-action="left" aria-label="왼쪽 이동, 길게 누르면 반복"><span class="key-icon" aria-hidden="true">←</span><span class="key-label">왼쪽</span></button>
+      <button type="button" class="key" data-action="soft" aria-label="소프트 드롭, 길게 누르면 반복"><span class="key-icon" aria-hidden="true">↓</span><span class="key-label">내리기</span></button>
+      <button type="button" class="key" data-action="right" aria-label="오른쪽 이동, 길게 누르면 반복"><span class="key-icon" aria-hidden="true">→</span><span class="key-label">오른쪽</span></button>
+      <button type="button" class="key rotate-key" data-action="cw" aria-label="시계 방향 회전"><span class="key-icon" aria-hidden="true">↻</span><span class="key-label">회전</span></button>
+      <button type="button" class="key" data-action="ccw" aria-label="반시계 방향 회전"><span class="key-icon" aria-hidden="true">↺</span><span class="key-label">반대로</span></button>
+      <button type="button" class="key" data-action="hold" aria-label="조각 보관 또는 교환"><span class="key-icon hold-icon" aria-hidden="true">⇄</span><span class="key-label">보관</span></button>
+      <button type="button" class="key drop-key" data-action="hard" aria-label="하드 드롭, 즉시 낙하 및 고정"><span class="key-icon" aria-hidden="true">⤓</span><span><b>즉시 낙하</b><small>HARD DROP / SPACE</small></span></button>
+    </section>
+    <footer class="footer"><span>줄을 채우고, 흐름을 찾으세요.</span><span class="local-mark">LOCAL ONLY</span></footer>
+  </main>
+  <dialog class="menu" id="menu" aria-labelledby="menu-title" aria-describedby="menu-copy">
+    <p class="eyebrow" id="menu-kicker">ONE MORE LINE</p>
+    <h2 id="menu-title">작은 틈에,<br>한 판.</h2>
+    <p id="menu-copy">7가지 조각으로 만드는 작은 질서.<br>가볍게 시작하고, 한 줄 더.</p>
+    <div class="final-stats" id="final-stats" hidden><span>이번 기록</span><strong id="final-score">0</strong></div>
+    <button type="button" class="primary" id="play" autofocus><span id="play-label">시작하기</span><span aria-hidden="true">→</span></button>
+    <button type="button" class="secondary" id="restart" hidden>처음부터 다시</button>
+    <details class="help" id="help"><summary>조작법과 규칙</summary><div>
+      <p>터치: 아래 버튼으로 모든 조작이 가능합니다. 이동·내리기는 길게 누르면 반복됩니다.</p>
+      <p>키보드: ← → 이동 · ↓ 내리기 · ↑/X 회전 · Z 반대로 · Space 즉시 낙하 · C/Shift 보관 · P/Esc 일시정지.</p>
+      <p>가로 한 줄을 채워 지우세요. 10줄마다 빨라집니다. 조각 보관은 새 조각마다 한 번. 윤곽선은 착지 예상 위치입니다.</p>
+      <p>소리는 오른쪽 위 ♪ 버튼으로 켭니다. 다른 앱으로 이동하면 자동으로 일시정지됩니다.</p>
+    </div></details>
+    <p class="menu-note">NO INSTALL. JUST PLAY.</p>
+  </dialog>
+  <p class="sr-only" id="announcer" aria-live="polite" aria-atomic="true"></p>
+  <noscript><div class="no-script">이 게임을 플레이하려면 브라우저의 JavaScript를 켜 주세요.</div></noscript>
+</body>
+</html>
